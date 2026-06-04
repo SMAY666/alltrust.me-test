@@ -1,0 +1,21 @@
+{
+  "name": "alltrustme-test",
+  "version": "0.1.0",
+  "description": "AllTrustMe test task",
+  "license": "UNLICENSED",
+  "author": {
+    "name": "Matvey Sazonov",
+    "email": "matvey150603@gmail.com"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
+  }
+}
