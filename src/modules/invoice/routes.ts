@@ -9,12 +9,12 @@ export const invoiceRouter = Router();
 
 invoiceRouter.post('/invoice', async (req: createInvoiceRequest, res) => {
     const created = await invoiceRepository.create(req.body);
-    res.send(created).status(201);
+    res.status(201).send(created);
 });
 
 invoiceRouter.post('/webhook', async (req: webhookRequest, res) => {
     await invoiceRepository.checkWebhook(req.headers, req.body);
-    res.send().status(200);
+    res.status(200).send();
 });
 
 invoiceRouter.get('/invoice/:id', async (req: getInvoiceRequest, res) => {

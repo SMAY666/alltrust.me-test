@@ -8,6 +8,12 @@ import {redisClient} from '../../brokers/redis.js';
 import {HttpError} from '../../utils/httpError.js';
 
 
+function getHeader(headers: object, name: string): string | undefined {
+    const record = headers as Record<string, string | string[] | undefined>;
+    const value = record[name] ?? record[name.toLowerCase()];
+    return Array.isArray(value) ? value[0] : value;
+}
+
 class InvoiceRepository {
     public async getById(id: string) {
         return await InvoiceModel.findById(id);
@@ -46,39 +52,40 @@ class InvoiceRepository {
             throw new HttpError('Invoice not found', 404);
         }
 
-        await InvoiceModel.updateOne({
-            id,
-            status: Status.pending,
-        }, {
-            $set: {
-                status,
-            }
-        });
+        await InvoiceModel.updateOne(
+            {_id: id, status: Status.pending},
+            {$set: {status, updatedAt: new Date()}}
+        );
     }
 
     public async checkWebhook(headers: object, data: WebhookBody) {
-        if (!headers['X-Timestamp'] || !headers['X-Nonce'] || !headers['X-Signature']) {
-            throw new HttpError('Missing "X-timestamp" or "X-Nonce" or "X-Signature" header');
+        const timestampHeader = getHeader(headers, 'X-Timestamp');
+        const nonceHeader = getHeader(headers, 'X-Nonce');
+        const signature = getHeader(headers, 'X-Signature');
+
+        if (!timestampHeader || !nonceHeader || !signature) {
+            throw new HttpError('Missing "X-Timestamp" or "X-Nonce" or "X-Signature" header');
         }
-        const timestamp = Number(headers['X-Timestamp']);
-        const nonce = Number(headers['X-Nonce']);
+
+        const timestamp = Number(timestampHeader);
+        const nonce = Number(nonceHeader);
 
         if (Math.abs(Date.now() - timestamp) > ENV.TIMESTAMP_WINDOW) {
             throw new HttpError('Expired request');
         }
 
-        const signature = headers['X-Signature'];
         const expected = crypto
-            .createHmac('SHA-256', ENV.MERCHANT_SECRET)
+            .createHmac('sha256', ENV.MERCHANT_SECRET)
             .update(JSON.stringify(data))
             .digest('hex');
 
-        const signatureCorrect = crypto.timingSafeEqual(
-            Buffer.from(signature),
-            Buffer.from(expected)
-        );
-        if (!signatureCorrect) {
-            throw new HttpError('Signature is incorrect');
+        const signatureBuffer = Buffer.from(signature);
+        const expectedBuffer = Buffer.from(expected);
+        if (
+            signatureBuffer.length !== expectedBuffer.length ||
+            !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+        ) {
+            throw new HttpError('Signature is incorrect', 401);
         }
 
         const result = await redisClient.set(
