@@ -47,15 +47,20 @@ class InvoiceRepository {
     }
 
     public async updateStatus(id: string, status: Status) {
-        const invoice = await this.getById(id);
-        if (!invoice) {
-            throw new HttpError('Invoice not found', 404);
-        }
-
-        await InvoiceModel.updateOne(
-            {_id: id, status: Status.pending},
-            {$set: {status, updatedAt: new Date()}}
+        const result = await InvoiceModel.updateOne(
+            {
+                _id: id,
+                status: Status.pending,
+            },
+            {
+                $set: {
+                    status,
+                    updatedAt: new Date(),
+                },
+            }
         );
+
+        return result.modifiedCount === 1;
     }
 
     public async checkWebhook(headers: object, data: WebhookBody) {
@@ -100,7 +105,14 @@ class InvoiceRepository {
             throw new HttpError('Conflict', 401);
         }
 
-        await this.updateStatus(data.invoiceId, data.status);
+        const updated = await this.updateStatus(
+            data.invoiceId,
+            data.status
+        );
+        if (updated && data.status === Status.paid) {
+            // Зачисление баланса
+            // await merchantRepository.addBalance(...);
+        }
     }
 }
 
