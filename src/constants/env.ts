@@ -7,4 +7,7 @@ export const ENV = cleanEnv(Object.assign({}, process.env), {
 
     MONGO_URL: str(),
     REDIS_URL: str(),
+
+    TIMESTAMP_WINDOW: num(),
+    MERCHANT_SECRET: str(),
 });
