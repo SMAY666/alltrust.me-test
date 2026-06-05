@@ -6,9 +6,13 @@ class MerchantRepository {
         return await MerchantModel.findById(id);
     }
 
+    public async getAll() {
+        return await MerchantModel.find();
+    }
+
     public async create(data: MerchantCreationAttributes) {
         // Можно добавить проверку уникальности по полю name
-        await MerchantModel.create(data);
+        return await MerchantModel.create(data);
     }
 }
 

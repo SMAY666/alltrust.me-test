@@ -10,11 +10,17 @@ app.use('/', invoiceRouter);
 
 
 export async function start() {
-    await merchantRepository.create({
-        name: 'Test Merchant',
-        feePercent: 0.03,
-    });
-    
+    const merchants = await merchantRepository.getAll();
+    if (!merchants.length) {
+        const testMerchant = await merchantRepository.create({
+            name: 'Test Merchant',
+            feePercent: 0.03,
+        });
+        console.log(`Test merchant ID: ${testMerchant.id}`);
+    } else {
+         console.log(`Test merchant ID: ${merchants[0].id}`);
+    }
+
     app.listen(ENV.PORT, () => {
         console.log(`Server is running on ${ENV.HOST}:${ENV.PORT}`);
     });
