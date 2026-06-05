@@ -1,12 +1,21 @@
 import express from 'express';
 import {ENV} from './constants/env.js';
+import {invoiceRouter} from './modules/invoice/routes.js';
+import {merchantRepository} from './modules/merchant/repository.js';
 
 const app = express();
-const PORT = ENV.PORT;
+
+app.use(express.json());
+app.use('/', invoiceRouter);
 
 
-export function start() {
-    app.listen(PORT, () => {
-        console.log(`Server is running on ${ENV.HOST}:${PORT}`);
+export async function start() {
+    await merchantRepository.create({
+        name: 'Test Merchant',
+        feePercent: 0.03,
+    });
+    
+    app.listen(ENV.PORT, () => {
+        console.log(`Server is running on ${ENV.HOST}:${ENV.PORT}`);
     });
 }
